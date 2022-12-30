@@ -1,336 +1,243 @@
-import React, { Component } from "react";
-import logo from "./logo.svg";
+import React, { Component, useState } from "react";
 import "./App.css";
 import validator from "@rjsf/validator-ajv8";
 import Form from "@rjsf/bootstrap-4";
 
 const schema = {
-  $schema: "http://json-schema.org/draft-04/schema#",
-  type: "object",
-  properties: {
-    inputs: {
+  $ref: "#/definitions/Preset",
+  definitions: {
+    Preset: {
       type: "object",
+      additionalProperties: false,
+      properties: {
+        inputs: {
+          $ref: "#/definitions/Inputs"
+        },
+        outputs: {
+          $ref: "#/definitions/Outputs"
+        },
+        actions: {
+          type: "array",
+          items: {
+            $ref: "#/definitions/Action"
+          }
+        },
+        triggers: {
+          type: "array",
+          items: {
+            $ref: "#/definitions/Trigger"
+          }
+        }
+      },
+      //required: ["actions", "inputs", "outputs", "triggers"],
+      title: "Preset"
+    },
+    Action: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        type: {
+          type: "string"
+        },
+        sequence: {
+          type: "array",
+          items: {
+            $ref: "#/definitions/ActionSequence"
+          }
+        }
+      },
+      required: ["sequence", "type"],
+      title: "Action"
+    },
+    ActionSequence: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        active: {
+          type: "boolean"
+        },
+        millis: {
+          type: "integer"
+        }
+      },
+      required: ["millis"],
+      title: "ActionSequence"
+    },
+    Inputs: {
+      type: "object",
+      additionalProperties: false,
       properties: {
         digitalInputs: {
           type: "array",
-          items: [
-            {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string"
-                },
-                gpio: {
-                  type: "integer"
-                },
-                type: {
-                  type: "string"
-                },
-                inverted: {
-                  type: "boolean"
-                }
-              },
-              required: ["name", "gpio", "type", "inverted"]
-            }
-          ]
+          items: {
+            $ref: "#/definitions/Put"
+          }
         },
         midiInputs: {
           type: "array",
-          items: [
-            {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string"
-                },
-                Tx: {
-                  type: "integer"
-                }
-              },
-              required: ["name", "Tx"]
-            }
-          ]
+          items: {
+            $ref: "#/definitions/MIDIInput"
+          }
         },
         analogInputs: {
           type: "array",
-          items: [
-            {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string"
-                },
-                gpio: {
-                  type: "integer"
-                },
-                type: {
-                  type: "string"
-                },
-                inverted: {
-                  type: "boolean"
-                }
-              },
-              required: ["name", "gpio", "type", "inverted"]
-            }
-          ]
+          items: {
+            $ref: "#/definitions/Put"
+          }
         }
       },
-      required: ["digitalInputs", "midiInputs", "analogInputs"]
+      //required: ["analogInputs", "digitalInputs", "midiInputs"],
+      title: "Inputs"
     },
-    outputs: {
+    Put: {
       type: "object",
+      additionalProperties: false,
+      properties: {
+        name: {
+          type: "string"
+        },
+        gpio: {
+          type: "integer"
+        },
+        type: {
+          type: "string"
+        },
+        inverted: {
+          type: "boolean"
+        }
+      },
+      required: ["gpio", "name", "type"],
+      title: "Put"
+    },
+    MIDIInput: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        name: {
+          type: "string"
+        },
+        Tx: {
+          type: "integer"
+        }
+      },
+      required: ["Tx", "name"],
+      title: "MIDIInput"
+    },
+    Outputs: {
+      type: "object",
+      additionalProperties: false,
       properties: {
         digitalOutputs: {
           type: "array",
-          items: [
-            {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string"
-                },
-                gpio: {
-                  type: "integer"
-                },
-                type: {
-                  type: "string"
-                },
-                inverted: {
-                  type: "boolean"
-                }
-              },
-              required: ["name", "gpio", "type", "inverted"]
-            }
-          ]
+          items: {
+            $ref: "#/definitions/Put"
+          }
         },
         midiOutputs: {
           type: "array",
-          items: [
-            {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string"
-                },
-                Rx: {
-                  type: "integer"
-                }
-              },
-              required: ["name", "Rx"]
-            }
-          ]
+          items: {
+            $ref: "#/definitions/MIDIOutput"
+          }
         }
       },
-      required: ["digitalOutputs", "midiOutputs"]
+      //required: ["digitalOutputs", "midiOutputs"],
+      title: "Outputs"
     },
-    actions: {
-      type: "array",
-      items: [
-        {
-          type: "object",
-          properties: {
-            type: {
-              type: "string"
-            },
-            sequence: {
-              type: "array",
-              items: [
-                {
-                  type: "object",
-                  properties: {
-                    active: {
-                      type: "boolean"
-                    },
-                    millis: {
-                      type: "integer"
-                    }
-                  },
-                  required: ["active", "millis"]
-                },
-                {
-                  type: "object",
-                  properties: {
-                    active: {
-                      type: "boolean"
-                    },
-                    millis: {
-                      type: "integer"
-                    }
-                  },
-                  required: ["active", "millis"]
-                }
-              ]
-            }
-          },
-          required: ["type", "sequence"]
+    MIDIOutput: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        name: {
+          type: "string"
         },
-        {
-          type: "object",
-          properties: {
-            type: {
-              type: "string"
-            },
-            sequence: {
-              type: "array",
-              items: {}
-            }
-          },
-          required: ["type", "sequence"]
-        },
-        {
-          type: "object",
-          properties: {
-            type: {
-              type: "string"
-            },
-            sequence: {
-              type: "array",
-              items: {}
-            }
-          },
-          required: ["type", "sequence"]
-        },
-        {
-          type: "object",
-          properties: {
-            type: {
-              type: "string"
-            },
-            sequence: {
-              type: "array",
-              items: {}
-            }
-          },
-          required: ["type", "sequence"]
+        Rx: {
+          type: "integer"
         }
-      ]
+      },
+      required: ["Rx", "name"],
+      title: "MIDIOutput"
     },
-    triggers: {
-      type: "array",
-      items: [
-        {
-          type: "object",
-          properties: {
-            type: {
-              type: "string"
-            },
-            id: {
-              type: "string"
-            },
-            sequence: {
-              type: "array",
-              items: [
-                {
-                  type: "object",
-                  properties: {
-                    timeSpan: {
-                      type: "integer"
-                    },
-                    edgeType: {
-                      type: "string"
-                    }
-                  },
-                  required: ["timeSpan", "edgeType"]
-                }
-              ]
-            },
-            actions: {
-              type: "array",
-              items: [
-                {
-                  type: "integer"
-                },
-                {
-                  type: "integer"
-                },
-                {
-                  type: "integer"
-                }
-              ]
-            }
-          },
-          required: ["type", "id", "sequence", "actions"]
+    Trigger: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        type: {
+          type: "string"
         },
-        {
-          type: "object",
-          properties: {
-            type: {
-              type: "string"
-            },
-            sequence: {
-              type: "array",
-              items: {}
-            },
-            actions: {
-              type: "array",
-              items: [
-                {
-                  type: "integer"
-                },
-                {
-                  type: "integer"
-                },
-                {
-                  type: "integer"
-                }
-              ]
-            }
-          },
-          required: ["type", "sequence", "actions"]
+        id: {
+          type: "string"
+        },
+        sequence: {
+          type: "array",
+          items: {
+            $ref: "#/definitions/TriggerSequence"
+          }
+        },
+        actions: {
+          type: "array",
+          items: {
+            type: "integer"
+          }
         }
-      ]
+      },
+      required: ["actions", "sequence", "type"],
+      title: "Trigger"
+    },
+    TriggerSequence: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        timeSpan: {
+          type: "integer"
+        },
+        edgeType: {
+          type: "string"
+        }
+      },
+      required: ["edgeType", "timeSpan"],
+      title: "TriggerSequence"
     }
-  },
-  required: ["inputs", "outputs", "actions", "triggers"]
+  }
 };
 
 const log = type => console.log.bind(console, type);
 
-class LambdaDemo extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { loading: false, msg: null };
-  }
+const PresetEditor = () => {
+  const emptyOutput = {};
+  const [output, setOutput] = useState(emptyOutput);
 
-  handleClick = api => e => {
-    e.preventDefault();
-
-    this.setState({ loading: true });
-    fetch("/.netlify/functions/" + api)
-      .then(response => response.json())
-      .then(json => this.setState({ loading: false, msg: json.msg }));
+  const PrettyJson = () => {
+    return <pre>{JSON.stringify(output, null, 2)}</pre>;
   };
 
-  render() {
-    const { loading, msg } = this.state;
+  const submitted = ({ formData }) => {
+    console.log("Data submitted: ", formData);
+    setOutput(formData);
+  };
 
-    return (
-      <p>
-        <button onClick={this.handleClick("hello")}>
-          {loading ? "Loading..." : "Call Lambda"}
-        </button>
-        <button onClick={this.handleClick("async-dadjoke")}>
-          {loading ? "Loading..." : "Call Async Lambda"}
-        </button>
-        <br />
-        <span>{msg}</span>
-      </p>
-    );
-  }
-}
+  return (
+    <div className="container">
+      <Form
+        className="mb-2"
+        schema={schema}
+        validator={validator}
+        onChange={log("changed")}
+        onSubmit={submitted}
+        onError={log("errors")}
+      />
+
+      <div className="jumbotron">
+        <PrettyJson />
+      </div>
+    </div>
+  );
+};
 
 class App extends Component {
   render() {
     return (
-      <div class="container">
-        <header>Æ Presets Builder</header>
-        <Form
-          schema={schema}
-          validator={validator}
-          onChange={log("changed")}
-          onSubmit={log("submitted")}
-          onError={log("errors")}
-        />
+      <div className="container">
+        <PresetEditor />
       </div>
     );
   }

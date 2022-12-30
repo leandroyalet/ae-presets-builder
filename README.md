@@ -2,7 +2,6 @@
 
 This project is a reference demo showing you how to use [Create React App v3](https://github.com/facebookincubator/create-react-app) and [netlify-lambda v1](https://github.com/netlify/netlify-lambda) together in a [Netlify Dev](https://www.netlify.com/docs/cli/?utm_source=github&utm_medium=swyx-CRAL&utm_campaign=devex#netlify-dev-beta) workflow. You can clone this and immediately be productive with a React app with serverless Netlify Functions in the same repo. Alternatively you can deploy straight to Netlify with this one-click Deploy:
 
-
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg?utm_source=github&utm_medium=swyx-CRAL&utm_campaign=devex)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify/create-react-app-lambda&utm_source=github&utm_medium=swyx-CRAL&utm_campaign=devex)
 
 > ⚠️NOTE: You may not need this project at all. [Netlify Dev](https://github.com/netlify/netlify-dev-plugin) works with `create-react-app` out of the box! Only use `netlify-lambda` if you need a build step for your functions, eg if you want to use Babel or TypeScript ([see its README for details](https://github.com/netlify/netlify-lambda/blob/master/README.md#netlify-lambda)).
@@ -45,7 +44,7 @@ You can view the project locally via Netlify Dev, via `localhost:8888`.
 
 Each function will be available at the same port as well:
 
-- `http://localhost:8888/.netlify/functions/hello` and 
+- `http://localhost:8888/.netlify/functions/hello` and
 - `http://localhost:8888/.netlify/functions/async-dadjoke`
 
 ## Deployment
@@ -68,27 +67,31 @@ You can use Typescript in both your frontend React code (with `react-scripts` v2
 3. use types in your event handler:
 
 ```ts
-import { Handler, Context, Callback, APIGatewayEvent } from 'aws-lambda'
+import { Handler, Context, Callback, APIGatewayEvent } from "aws-lambda";
 
 interface HelloResponse {
-  statusCode: number
-  body: string
+  statusCode: number;
+  body: string;
 }
 
-const handler: Handler = (event: APIGatewayEvent, context: Context, callback: Callback) => {
-  const params = event.queryStringParameters
+const handler: Handler = (
+  event: APIGatewayEvent,
+  context: Context,
+  callback: Callback
+) => {
+  const params = event.queryStringParameters;
   const response: HelloResponse = {
     statusCode: 200,
     body: JSON.stringify({
       msg: `Hello world ${Math.floor(Math.random() * 10)}`,
-      params,
-    }),
-  }
+      params
+    })
+  };
 
-  callback(undefined, response)
-}
+  callback(undefined, response);
+};
 
-export { handler }
+export { handler };
 ```
 
 rerun and see it work!
@@ -106,3 +109,40 @@ For a full demo of routing and authentication, check this branch: https://github
 ## Service Worker
 
 `create-react-app`'s default service worker (in `src/index.js`) does not work with lambda functions out of the box. It prevents calling the function and returns the app itself instead ([Read more](https://github.com/facebook/create-react-app/issues/2237#issuecomment-302693219)). To solve this you have to eject and enhance the service worker configuration in the webpack config. Whitelist the path of your lambda function and you are good to go.
+
+## Old component
+
+```js
+class LambdaDemo extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { loading: false, msg: null };
+  }
+
+  handleClick = api => e => {
+    e.preventDefault();
+
+    this.setState({ loading: true });
+    fetch("/.netlify/functions/" + api)
+      .then(response => response.json())
+      .then(json => this.setState({ loading: false, msg: json.msg }));
+  };
+
+  render() {
+    const { loading, msg } = this.state;
+
+    return (
+      <p>
+        <button onClick={this.handleClick("hello")}>
+          {loading ? "Loading..." : "Call Lambda"}
+        </button>
+        <button onClick={this.handleClick("async-dadjoke")}>
+          {loading ? "Loading..." : "Call Async Lambda"}
+        </button>
+        <br />
+        <span>{msg}</span>
+      </p>
+    );
+  }
+}
+```
